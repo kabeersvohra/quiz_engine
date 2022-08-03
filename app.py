@@ -6,9 +6,7 @@ from starlette.requests import Request
 import graphene
 from query import Query
 
-engine = create_engine(
-    "postgresql://postgres:postgres@128.0.0.1:5432/postgres",
-)
+engine = create_engine("postgresql://postgres:postgres@localhost:5432/postgres")
 Session = sessionmaker(bind=engine, autoflush=False)
 
 app = FastAPI()

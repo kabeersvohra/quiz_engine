@@ -4,9 +4,6 @@ services:
     postgres:
         restart: always
         image: postgres:12.4
-        environment:
-            POSTGRES_USER: postgres
-            POSTGRES_PASSWORD: postgres
         volumes:
             - pgdata:/var/lib/postgresql/data
         ports:

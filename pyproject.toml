@@ -15,6 +15,7 @@ psycopg2-binary = "^2.9.3"
 graphene = "2.1.8"
 graphene-sqlalchemy = "2.3.0"
 alembic = "^1.8.1"
+jose = "^1.0.0"
 
 [tool.poetry.dev-dependencies]
 pudb = "^2022.1.2"
