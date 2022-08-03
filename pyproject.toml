@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "Quiz Engine"
+version = "0.1.0"
+description = ""
+authors = ["Kabeer Vohra <kabeer@vohra.eu>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+fastapi = "^0.63.0"
+graphql-core = "2.3.2"
+SQLAlchemy = "1.3.19"
+uvicorn = "0.13.3"
+starlette = "0.13.6"
+psycopg2-binary = "^2.9.3"
+graphene = "2.1.8"
+graphene-sqlalchemy = "2.3.0"
+alembic = "^1.8.1"
+
+[tool.poetry.dev-dependencies]
+pudb = "^2022.1.2"
+jedi = "^0.18.1"
+pynvim = "^0.4.3"

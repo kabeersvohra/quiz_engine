@@ -1,0 +1,16 @@
+---
+version: '2.2'
+services:
+    postgres:
+        restart: always
+        image: postgres:12.4
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: postgres
+        volumes:
+            - pgdata:/var/lib/postgresql/data
+        ports:
+            - 5432:5432
+volumes:
+    pgdata:
+        driver: local
