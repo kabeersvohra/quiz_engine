@@ -1,7 +1,7 @@
 import uuid
 
 from sqlalchemy import Boolean, ForeignKey, Text, UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.schema import Column
@@ -60,3 +60,12 @@ class Answer(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     answer = Column(Text, nullable=False)
     correct = Column(Boolean, nullable=False)
+
+
+class Solution(Base):
+    __tablename__ = "solution"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user = Column(UUID(as_uuid=True), ForeignKey("user.id"))
+    quiz = Column(UUID(as_uuid=True), ForeignKey("quiz.id"))
+    scores = Column(JSONB, nullable=False)
