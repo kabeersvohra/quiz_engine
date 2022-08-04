@@ -7,9 +7,9 @@ from sqlalchemy.orm import sessionmaker
 from starlette.graphql import GraphQLApp
 
 from deps import get_current_user
-from models import User
+from models import Answer, Question, Quiz, User
 from query import Query
-from schemas import SystemUser, TokenSchema, UserAuth, UserOut
+from schemas import QuestionType, QuizCreate, QuizOut, SystemUser, TokenSchema, UserAuth, UserOut
 from utils import (
     create_access_token,
     create_refresh_token,
@@ -80,6 +80,40 @@ async def login(data: UserAuth):
 )
 async def get_me(user: SystemUser = Depends(get_current_user)):
     return user
+
+
+@app.post(
+    "/create", summary="Create a quiz", response_model=QuizOut
+)
+async def create_quiz(quiz: QuizCreate, user: SystemUser = Depends(get_current_user)):
+    session = Session()
+
+    db_quiz = Quiz(name=quiz.name, owner=user.id)
+    db_questions = []
+    for question in quiz.questions:
+        number_of_correct_answers = len([a for a in question.answers if a.correct])
+        if (
+            (question.type == QuestionType.SINGLE and number_of_correct_answers != 1)
+            or
+            (question.type == QuestionType.MULTI and number_of_correct_answers < 1)
+        ):
+            raise HTTPException(status_code=400, detail="Incorrect number of correct answers")
+
+        db_answers = []
+        for answer in question.answers:
+            db_answers.append(Answer(answer=answer.answer, correct=answer.correct))
+        db_questions.append(
+            Question(question=question.question, type=question.type.value, answers=db_answers)
+        )
+    db_quiz.questions = db_questions
+    session.add(db_quiz)
+    session.commit()
+    session.close()
+
+    return QuizOut(
+        id=uuid4(),
+        name=quiz.name
+    )
 
 
 app.include_router(router)

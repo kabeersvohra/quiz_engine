@@ -31,6 +31,7 @@ def create_access_token(subject: Union[str, Any], expires_delta: int = None) -> 
         )
 
     to_encode = {"exp": expires_delta, "sub": str(subject)}
+    # For a safer system, should really be using salting here
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, ALGORITHM)
     return encoded_jwt
 
