@@ -1,3 +1,4 @@
+from typing import List
 from uuid import uuid4
 
 import graphene
@@ -9,7 +10,7 @@ from starlette.graphql import GraphQLApp
 from deps import get_current_user
 from models import Answer, Question, Quiz, User
 from query import Query
-from schemas import QuestionType, QuizCreate, QuizOut, SystemUser, TokenSchema, UserAuth, UserOut
+from schemas import QuestionType, QuizCreate, QuizEdit, QuizId, QuizOut, SystemUser, TokenSchema, UserAuth, UserOut
 from utils import (
     create_access_token,
     create_refresh_token,
@@ -83,12 +84,12 @@ async def get_me(user: SystemUser = Depends(get_current_user)):
 
 
 @app.post(
-    "/create", summary="Create a quiz", response_model=QuizOut
+    "/create/quiz", summary="Create a quiz", response_model=QuizOut
 )
 async def create_quiz(quiz: QuizCreate, user: SystemUser = Depends(get_current_user)):
     session = Session()
 
-    db_quiz = Quiz(name=quiz.name, owner=user.id)
+    db_quiz = Quiz(id=uuid4(), name=quiz.name, owner=user.id)
     db_questions = []
     for question in quiz.questions:
         number_of_correct_answers = len([a for a in question.answers if a.correct])
@@ -106,14 +107,76 @@ async def create_quiz(quiz: QuizCreate, user: SystemUser = Depends(get_current_u
             Question(question=question.question, type=question.type.value, answers=db_answers)
         )
     db_quiz.questions = db_questions
+    res = QuizOut(
+        id = db_quiz.id,
+        name = db_quiz.name,
+        published=db_quiz.published,
+    )
     session.add(db_quiz)
     session.commit()
     session.close()
 
-    return QuizOut(
-        id=uuid4(),
-        name=quiz.name
-    )
+    return res
+
+@app.get(
+    "/list/quiz/mine", summary="", response_model=List[QuizOut]
+)
+async def list_unpublished_quiz(user: SystemUser = Depends(get_current_user)):
+    session = Session()
+    res = session.query(Quiz).filter_by(owner=user.id)
+    session.close()
+    return [QuizOut(id=q.id, name=q.name, published=q.published) for q in res]
+
+
+@app.put(
+    "/publish/quiz", summary="", response_model=QuizOut
+)
+async def publish_quiz(quiz_id: QuizId, user: SystemUser = Depends(get_current_user)):
+    session = Session()
+    q = session.query(Quiz).filter_by(owner=user.id, id=quiz_id.id).first()
+    if not q:
+        raise HTTPException(status_code=400, detail="No such quiz exists")
+    if q.published:
+        raise HTTPException(status_code=400, detail="Quiz is already published")
+
+    q.published = True
+    res = QuizOut(id=q.id, name=q.name, published=q.published)
+    session.commit()
+    session.close()
+    return res
+
+
+@app.post(
+    "/delete/quiz", summary="Delete a quiz", response_model=QuizOut
+)
+async def delete_quiz(quiz_id: QuizId, user: SystemUser = Depends(get_current_user)):
+    session = Session()
+    q = session.query(Quiz).filter_by(owner=user.id, id=quiz_id.id).first()
+    if not q:
+        raise HTTPException(status_code=400, detail="No such quiz exists")
+
+    session.delete(q)
+    session.commit()
+    session.close()
+    return True
+
+
+@app.post(
+    "/edit/quiz", summary="Edit a quiz", response_model=QuizOut
+)
+async def edit_quiz(quiz: QuizEdit, user: SystemUser = Depends(get_current_user)):
+    session = Session()
+    q = session.query(Quiz).filter_by(owner=user.id, id=quiz.id).first()
+    if not q:
+        raise HTTPException(status_code=400, detail="No such quiz exists")
+    if q.published:
+        raise HTTPException(status_code=400, detail="Quiz is already published")
+
+    await delete_quiz(QuizId(id=quiz.id), user)
+    res = await create_quiz(quiz.new_quiz, user)
+    session.commit()
+    session.close()
+    return res
 
 
 app.include_router(router)

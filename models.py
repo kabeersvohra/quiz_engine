@@ -42,6 +42,7 @@ class Quiz(Base):
     owner = Column(UUID(as_uuid=True), ForeignKey("user.id"))
     name = Column(Text, nullable=False)
     questions = relationship("Question", secondary="quiz_questions")
+    published = Column(Boolean, default=False)
 
 
 class Question(Base):

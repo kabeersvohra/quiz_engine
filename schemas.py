@@ -30,6 +30,7 @@ class SystemUser(UserOut):
 class QuizOut(BaseModel):
     id: UUID
     name: str
+    published: bool
 
 class AnswerSchema(BaseModel):
     answer: str
@@ -47,3 +48,10 @@ class QuestionSchema(BaseModel):
 class QuizCreate(BaseModel):
     name: str
     questions: conlist(QuestionSchema, min_items=1, max_items=10)
+
+class QuizEdit(BaseModel):
+    id: UUID
+    new_quiz: QuizCreate
+
+class QuizId(BaseModel):
+    id: UUID
