@@ -201,7 +201,7 @@ async def list_solution_quiz(user: SystemUser = Depends(get_current_user)):
         SolutionOut(
             quiz_id=s.quiz,
             quiz_name=session.query(Quiz).get(s.quiz).name,
-            completed_by=session.query(User).get(user.id).email,
+            completed_by=session.query(User).get(s.user).email,
             scores=json.loads(s.scores),
             total_score=statistics.mean(json.loads(s.scores))
         ) for s in solutions
@@ -295,7 +295,7 @@ async def publish_quiz(quiz_id: QuizId, user: SystemUser = Depends(get_current_u
     return res
 
 
-@app.post("/delete/quiz", summary="Delete a quiz", response_model=QuizOut)
+@app.post("/delete/quiz", summary="Delete a quiz", response_model=QuizId)
 async def delete_quiz(quiz_id: QuizId, user: SystemUser = Depends(get_current_user)):
     session = Session()
     q = session.query(Quiz).filter_by(owner=user.id, id=quiz_id.id).first()
