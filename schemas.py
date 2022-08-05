@@ -35,6 +35,14 @@ class QuizOut(BaseModel):
     published: bool
 
 
+class SolutionOut(BaseModel):
+    quiz_id: UUID
+    quiz_name: str
+    completed_by: str
+    scores: List[float]
+    total_score: float
+
+
 class AnswerSchema(BaseModel):
     answer: str
     correct: Optional[bool]

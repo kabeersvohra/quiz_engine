@@ -7,7 +7,6 @@ import graphene
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from starlette.graphql import GraphQLApp
 
 from deps import get_current_user
 from models import Answer, Question, Quiz, Solution, User
@@ -25,6 +24,7 @@ from schemas import (
     QuizOutput,
     SolutionCreate,
     SolutionResult,
+    SolutionOut,
     SystemUser,
     TokenSchema,
     UserAuth,
@@ -42,9 +42,6 @@ Session = sessionmaker(bind=engine, autoflush=False)
 
 app = FastAPI()
 router = APIRouter()
-
-schema = graphene.Schema(query=Query)
-graphql_app = GraphQLApp(schema=schema)
 
 
 @router.get("/")
@@ -175,6 +172,44 @@ async def list_todo_quiz(user: SystemUser = Depends(get_current_user)):
     return res
 
 
+@app.get("/list/solution/submitted", summary="", response_model=List[SolutionOut])
+async def list_solution_submitted(user: SystemUser = Depends(get_current_user)):
+    session = Session()
+    solutions = session.query(Solution).filter_by(user=user.id)
+    res = [
+        SolutionOut(
+            quiz_id=s.quiz,
+            quiz_name=session.query(Quiz).get(s.quiz).name,
+            completed_by=session.query(User).get(user.id).email,
+            scores=json.loads(s.scores),
+            total_score=statistics.mean(json.loads(s.scores))
+        ) for s in solutions
+    ]
+    session.close()
+    return res
+
+
+@app.get("/list/solution/quiz", summary="", response_model=List[SolutionOut])
+async def list_solution_quiz(user: SystemUser = Depends(get_current_user)):
+    session = Session()
+    solutions = (
+        session.query(Solution)
+        .join(Quiz, Quiz.id == Solution.quiz)
+        .filter(Quiz.owner == user.id)
+    )
+    res = [
+        SolutionOut(
+            quiz_id=s.quiz,
+            quiz_name=session.query(Quiz).get(s.quiz).name,
+            completed_by=session.query(User).get(user.id).email,
+            scores=json.loads(s.scores),
+            total_score=statistics.mean(json.loads(s.scores))
+        ) for s in solutions
+    ]
+    session.close()
+    return res
+
+
 @app.post("/create/solution", summary="Answer a quiz", response_model=SolutionResult)
 async def create_solution(
     solution: SolutionCreate, user: SystemUser = Depends(get_current_user)
@@ -184,10 +219,10 @@ async def create_solution(
     if session.query(Solution).filter(Solution.user == user.id, Solution.quiz == solution.quiz_id).first() is not None:
         raise HTTPException(status_code=400, detail="Quiz has already been completed")
 
-    quiz = session.query(Quiz).filter(Quiz.id == solution.quiz_id).first()
+    quiz = session.query(Quiz).filter(Quiz.id == solution.quiz_id, Quiz.published == True).first()
     if not quiz:
         raise HTTPException(status_code=400, detail="No such quiz exists")
-    elif not quiz.published or quiz.id == user.id:
+    elif quiz.id == user.id:
         raise HTTPException(status_code=400, detail="Quiz cannot be taken, it is your own")
 
     answer_ids = {a.question_id for a in solution.answers}
