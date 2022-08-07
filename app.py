@@ -5,12 +5,9 @@ from uuid import uuid4
 
 import graphene
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 from deps import get_current_user
 from models import Answer, Question, Quiz, Solution, User
-from query import Query
 from schemas import (
     AnswerOutput,
     AnswerSchema,
@@ -36,6 +33,8 @@ from utils import (
     get_hashed_password,
     verify_password,
 )
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 engine = create_engine("postgresql://postgres:postgres@localhost:5432/postgres")
 Session = sessionmaker(bind=engine, autoflush=False)
@@ -139,6 +138,8 @@ async def create_quiz(quiz: QuizCreate, user: SystemUser = Depends(get_current_u
 async def get_quiz(quiz_id: QuizId, user: SystemUser = Depends(get_current_user)):
     session = Session()
     quiz = session.query(Quiz).get(quiz_id.id)
+    if quiz is None:
+        raise HTTPException(status_code=404, detail="Quiz not found")
     questions = quiz.questions
     res_questions = [
         QuestionOutput(

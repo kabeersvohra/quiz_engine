@@ -16,7 +16,7 @@ class TokenPayload(BaseModel):
 
 
 class UserAuth(BaseModel):
-    email: str = Field(..., description="user email")
+    email: str = Field(..., description="user email") # email validation should be done here
     password: str = Field(..., min_length=5, max_length=24, description="user password")
 
 
