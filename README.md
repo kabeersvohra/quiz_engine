@@ -1,4 +1,6 @@
-## Toptal Interview Quiz Engine
+## Quiz Engine
+
+Basic quiz engine using FastAPI and SQLAlchemy based on a PostgreSQL database. Uses JWT tokens for authentication
 
 Instructions to run:
 

@@ -302,6 +302,10 @@ async def delete_quiz(quiz_id: QuizId, user: SystemUser = Depends(get_current_us
     q = session.query(Quiz).filter_by(owner=user.id, id=quiz_id.id).first()
     if not q:
         raise HTTPException(status_code=400, detail="No such quiz exists")
+
+    if q.published:
+        raise HTTPException(status_code=400, detail="Quiz is already published")
+
     res = QuizId(id=q.id)
 
     session.delete(q)
